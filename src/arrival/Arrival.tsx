@@ -126,6 +126,8 @@ export default function Arrival() {
       const settle = smooth(0.74, 0.985, p)
       $('interior').style.visibility = p > 0.5 ? 'visible' : 'hidden'
       $('interior').style.transform = css(frame(view, { ...HUB_SHOT, s: lerp(1.32, 1, settle) }))
+      // the room settles into the calmer hub lighting as the camera pulls back
+      $('calm').style.opacity = String(smooth(0.86, 0.985, p))
 
       const reveal = clamp((p - 0.835) / 0.07, 0, 1)
       words.forEach((w, i) => {
@@ -155,6 +157,7 @@ export default function Arrival() {
       engrave(1)
       $('interior').style.visibility = 'visible'
       $('interior').style.transform = css(frame(view, HUB_SHOT))
+      $('calm').style.opacity = String(smooth(0.8, 0.98, p))
       words.forEach((w) => (w.style.transform = 'none'))
       $('welcome').style.opacity = String(smooth(0.74, 0.8, p))
       $('cue').style.opacity = String(1 - smooth(0, 0.05, p))
@@ -241,6 +244,7 @@ export default function Arrival() {
       <div ref={stage} className="stage sticky top-0">
         <div ref={put('interior')} className="plate" style={{ backgroundImage: `url(${BLUR.interior})`, visibility: 'hidden' }}>
           {img('interior')}
+          <div ref={put('calm')} className="calm" style={{ opacity: 0 }} />
         </div>
 
         <div ref={put('doors')} className="plate" style={{ backgroundImage: `url(${BLUR.doors})`, visibility: 'hidden' }}>

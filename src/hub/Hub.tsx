@@ -89,6 +89,7 @@ export function Hub({ hidden }: { hidden: boolean }) {
           onLoad={() => setReady(true)}
           style={{ opacity: ready ? 1 : 0, transition: 'opacity .6s' }}
         />
+        <div className="calm" />
       </motion.div>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_45%,transparent_50%,rgba(0,0,0,0.5))]" />
 
@@ -104,7 +105,7 @@ export function Hub({ hidden }: { hidden: boolean }) {
               key={st.id}
               type="button"
               data-node={st.node}
-              className={`hotspot ${px > view.w * 0.55 ? 'flip' : ''} ${guide ? 'guide' : ''}`}
+              className={`hotspot ${px > view.w * 0.55 ? 'flip' : ''} ${guide ? 'guide' : ''} ${locked ? 'locked' : ''}`}
               style={{ left: px, top: py }}
               tabIndex={station ? -1 : 0}
               aria-label={`${st.label}. ${locked ? 'Locked. Jen and Curtis only.' : st.sub}`}
