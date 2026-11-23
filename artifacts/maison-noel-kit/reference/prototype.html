@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Maison Noël · The House of Christmas (prototype)</title>
+<meta name="description" content="Maison Noël: French for The House of Christmas. The Hansen family wishlist workshop.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..600&family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=Manrope:wght@400;500;600&display=swap">
+<style>
+:root{
+  --spruce:#0b1510; --spruce-2:#101d16; --forest:#0a3a1d; --forest-2:#0d4724; --oxblood:#5a0d12; --oxblood-2:#7a1820;
+  --gold:#bc9c5c; --gold-hi:#ead39a; --gold-lo:#7d6230; --ivory:#f3ede1; --ivory-2:rgba(243,237,225,.66); --ivory-3:rgba(243,237,225,.42);
+  --hair:rgba(188,156,92,.32); --glass:rgba(16,29,22,.62);
+  /* one radius system, concentric: outer = inner + padding */
+  --pad:16px; --r-in:12px; --r-out:calc(var(--r-in) + var(--pad)); --r-pill:999px;
+  --serif:'Bodoni Moda','Didot','Bodoni 72',Georgia,serif; --ital:'Crimson Pro',Georgia,serif; --sans:'Manrope',system-ui,sans-serif;
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --spring:cubic-bezier(.34,1.56,.64,1); /* replaced at runtime by a real spring curve */
+  --shadow-soft:0 1px 1px rgba(0,0,0,.10),0 2px 4px rgba(0,0,0,.10),0 8px 16px rgba(0,0,0,.14),0 24px 48px rgba(0,0,0,.22);
+  --shadow-lift:0 2px 2px rgba(0,0,0,.10),0 6px 10px rgba(0,0,0,.14),0 18px 32px rgba(0,0,0,.20),0 44px 88px rgba(0,0,0,.34);
+  --fs-hero:clamp(56px, 13vw, 200px); --fs-h2:clamp(40px, 6.4vw, 92px); --fs-sub:clamp(19px, 2.1vw, 26px);
+}
+*{box-sizing:border-box}
+html{background:var(--spruce);color:var(--ivory);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+body{margin:0;font:400 15px/1.6 var(--sans);overflow-x:hidden}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+::selection{background:var(--gold);color:var(--spruce)}
+
+/* ---------- film grain (texture & depth) ---------- */
+.grain{position:fixed;inset:-50%;z-index:90;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain 1.2s steps(6) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-4%,3%)}40%{transform:translate(3%,-5%)}60%{transform:translate(-6%,-2%)}80%{transform:translate(5%,4%)}100%{transform:translate(0,0)}}
+.vignette{position:fixed;inset:0;pointer-events:none;z-index:89;background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(0,0,0,.45))}
+
+/* ---------- text reveal masks ---------- */
+.mask{display:inline-block;overflow:hidden;vertical-align:top;padding:.04em .1em .14em;margin:-.04em -.1em -.14em}
+.mask>.in{display:inline-block;will-change:transform}
+
+/* ---------- nav ---------- */
+.nav{position:fixed;inset:max(14px,env(safe-area-inset-top)) 16px auto 16px;z-index:60;display:flex;justify-content:space-between;align-items:center;gap:12px;pointer-events:none;opacity:0;transform:translateY(-12px);transition:opacity .6s var(--ease-out),transform .6s var(--ease-out)}
+.nav.show{opacity:1;transform:none}
+.nav>*{pointer-events:auto}
+.mark{display:flex;flex-direction:column;line-height:1;padding:10px 16px;border-radius:var(--r-pill);background:var(--glass);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);border:1px solid var(--hair);text-decoration:none;color:inherit;position:relative}
+.mark b{font:500 18px/1 var(--serif);letter-spacing:-.01em}
+.mark small{font:italic 300 12.5px/1.2 var(--ital);color:var(--gold-hi);margin-top:3px}
+.viewer{display:flex;align-items:center;gap:10px;padding:6px 6px 6px 16px;border-radius:var(--r-pill);background:var(--glass);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);border:1px solid var(--hair);font-size:12.5px;color:var(--ivory-2)}
+.viewer select{appearance:none;-webkit-appearance:none;background:var(--ivory);color:var(--spruce);border:0;border-radius:var(--r-pill);padding:8px 30px 8px 14px;font:600 13px var(--sans);cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230b1510' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+
+/* ---------- overture (scrollytelling) ---------- */
+.overture{position:relative}
+.stage{position:relative;height:100vh;height:100svh;overflow:hidden;perspective:1800px;background:#050a07}
+#snow{position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none}
+.interior{position:absolute;inset:0;display:grid;place-items:center;text-align:center;z-index:1;
+  background:radial-gradient(60% 55% at 50% 55%,rgba(234,211,154,.55),rgba(188,156,92,.18) 40%,rgba(90,13,18,.25) 70%,#050a07 100%)}
+.interior .welcome{font:italic 300 var(--fs-sub)/1.3 var(--ital);color:var(--ivory);opacity:0}
+.interior .welcome b{display:block;font:500 clamp(40px,7vw,96px)/1 var(--serif);font-style:normal;letter-spacing:-.02em;margin-top:8px}
+.doors{position:absolute;inset:0;z-index:3;display:flex;transform-style:preserve-3d}
+.door{flex:1;position:relative;transform-style:preserve-3d;will-change:transform;
+  background:linear-gradient(180deg,#0d4224,#082d17 60%,#06210f);box-shadow:inset 0 0 0 1px rgba(0,0,0,.4)}
+.door.left{transform-origin:left center}.door.right{transform-origin:right center}
+.door .panel{position:absolute;left:12%;right:12%;border:1px solid var(--hair);border-radius:6px;box-shadow:inset 0 0 0 6px rgba(0,0,0,.18),inset 0 0 0 7px rgba(188,156,92,.18)}
+.door .p1{top:8%;height:38%}.door .p2{top:52%;height:40%}
+.door .ring{position:absolute;top:50%;width:34px;height:34px;margin-top:-17px;border-radius:50%;border:3px solid var(--gold);box-shadow:0 2px 6px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.3)}
+.door.left .ring{right:7%}.door.right .ring{left:7%}
+.door.left::after,.door.right::after{content:"";position:absolute;top:0;bottom:0;width:1px;background:linear-gradient(transparent,var(--gold),transparent)}
+.door.left::after{right:0}.door.right::after{left:0}
+.titleLayer{position:absolute;inset:0;z-index:4;display:grid;place-content:center;justify-items:center;text-align:center;padding:24px;pointer-events:none}
+.eyebrow{font:500 11.5px/1 var(--sans);letter-spacing:.32em;text-transform:uppercase;color:var(--gold-hi);margin:0 0 22px}
+h1.title{margin:0;font:500 var(--fs-hero)/.86 var(--serif);letter-spacing:-.03em;white-space:nowrap}
+h1.title .accent{font-style:italic;color:var(--gold-hi)}
+.defs{display:grid;grid-template-columns:repeat(2,minmax(0,300px));gap:16px 56px;margin-top:40px;text-align:left}
+.def{border-top:1px solid var(--hair);padding-top:14px}
+.def .mask{display:block}
+.scrollcue .cueIn{display:flex;flex-direction:column;align-items:center;gap:10px;animation:cueIn 1.2s 1.3s var(--ease-out) both}
+@keyframes cueIn{from{opacity:0;transform:translateY(10px)}}
+h1.title{font-optical-sizing:none;font-variation-settings:"opsz" 40}
+.def .word{font:italic 400 26px/1.1 var(--ital);color:var(--ivory)}
+.def .ipa{font:400 13px/1 var(--sans);color:var(--ivory-3);margin-left:8px}
+.def .mean{display:block;font:400 14.5px/1.5 var(--sans);color:var(--ivory-2);margin-top:6px}
+.together{margin:36px 0 0;font:italic 300 clamp(22px,2.8vw,34px)/1.2 var(--ital);color:var(--ivory)}
+.together em{font-style:italic;color:var(--gold-hi)}
+.scrollcue{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);z-index:6;font:500 11px var(--sans);letter-spacing:.28em;text-transform:uppercase;color:var(--ivory-2);display:flex;flex-direction:column;align-items:center;gap:10px}
+.scrollcue i{width:1px;height:40px;background:linear-gradient(var(--gold),transparent);transform-origin:top;animation:cue 2.2s var(--ease-out) infinite}
+@keyframes cue{0%{transform:scaleY(0)}50%{transform:scaleY(1)}100%{transform:scaleY(1);opacity:0}}
+
+/* ---------- sections ---------- */
+section.block{position:relative;padding:clamp(96px,14vw,176px) clamp(16px,5vw,64px) clamp(64px,8vw,120px);max-width:1240px;margin:0 auto}
+.head{display:grid;gap:16px;margin-bottom:clamp(40px,6vw,72px)}
+.head .eyebrow{margin:0}
+h2{margin:0;font:400 var(--fs-h2)/.95 var(--serif);letter-spacing:-.03em}
+h2 em{font-style:italic;color:var(--gold-hi)}
+.sub{margin:0;font:italic 300 var(--fs-sub)/1.35 var(--ital);color:var(--ivory-2);max-width:40ch}
+.rule{height:1px;background:linear-gradient(90deg,var(--hair),transparent);margin-top:8px}
+
+/* ---------- token hall ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px 16px}
+.token{position:relative;display:grid;justify-items:center;gap:12px;padding:24px 8px 16px;border:0;background:none;border-radius:var(--r-out);outline:none}
+.token:focus-visible{box-shadow:0 0 0 1px var(--gold)}
+.coinWrap{position:relative;width:116px;height:136px;display:grid;place-items:start center;perspective:700px}
+.coin{position:relative;width:112px;height:112px;border-radius:50%;display:grid;place-items:center;will-change:transform;transform-style:preserve-3d;
+  background:radial-gradient(120% 120% at 30% 22%,#fff3cc 0%,#e2c37d 24%,#bd9a52 48%,#8b6a2f 74%,#5a4418 100%);
+  box-shadow:inset 0 0 0 2px rgba(255,243,204,.45),inset 0 0 0 7px rgba(110,82,32,.55),inset 0 0 0 8px rgba(255,236,190,.35),inset 0 -10px 18px rgba(40,26,6,.45),inset 0 8px 14px rgba(255,255,255,.35)}
+.coin .mono{font:italic 500 50px/1 var(--serif);color:#5d4416;text-shadow:0 1px 0 rgba(255,240,200,.65),0 -1px 0 rgba(40,25,5,.35);transform:translateZ(8px)}
+.coin .num{position:absolute;bottom:17px;font:600 8.5px/1 var(--sans);letter-spacing:.22em;color:rgba(70,50,15,.75)}
+.coin .sheen{position:absolute;inset:0;border-radius:50%;overflow:hidden;pointer-events:none}
+.coin .sheen::before{content:"";position:absolute;top:-40%;left:-60%;width:60%;height:180%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);transform:translateX(var(--sx,0px)) rotate(18deg)}
+.shadowDisc{position:absolute;bottom:4px;left:50%;width:96px;height:16px;margin-left:-48px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.6),transparent);will-change:transform,opacity}
+.tname{font:500 15px/1.2 var(--serif);letter-spacing:-.005em;text-align:center}
+.tmeta{font:italic 300 14px/1.2 var(--ital);color:var(--ivory-3);min-height:17px;text-align:center}
+.token.claimed .coin{filter:saturate(.55) brightness(.72)}
+.token.claimed{cursor:default}
+.token.claimed .tmeta{color:var(--gold-hi)}
+.token .engrave{display:inline-block}
+
+/* ---------- gallery (bento) ---------- */
+.rules{display:flex;gap:12px;align-items:flex-start;padding:var(--pad);border-radius:var(--r-out);background:rgba(243,237,225,.04);border:1px solid var(--hair);margin:-24px 0 40px;font-size:14px;color:var(--ivory-2);max-width:760px}
+.rules .dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--gold);margin-top:8px;box-shadow:0 0 0 4px rgba(188,156,92,.18)}
+.rules b{color:var(--ivory);font-weight:600}
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
+.shelf{grid-column:span 3;padding:var(--pad);border-radius:var(--r-out);background:linear-gradient(180deg,rgba(243,237,225,.055),rgba(243,237,225,.02));border:1px solid rgba(243,237,225,.08);box-shadow:var(--shadow-soft)}
+.shelf.wide{grid-column:span 4}.shelf.narrow{grid-column:span 2}
+@container (max-width:0px){}
+.shelfHead{display:flex;align-items:center;gap:12px;padding:8px 8px 16px}
+.mini{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none;background:radial-gradient(120% 120% at 30% 22%,#fff3cc 0%,#e2c37d 24%,#bd9a52 48%,#8b6a2f 74%,#5a4418 100%);box-shadow:inset 0 0 0 2px rgba(110,82,32,.5),0 4px 10px rgba(0,0,0,.35)}
+.mini span{font:italic 500 19px/1 var(--serif);color:#5d4416}
+.shelfHead h3{margin:0;font:500 22px/1.1 var(--serif);letter-spacing:-.01em}
+.shelfHead p{margin:2px 0 0;font:italic 300 14.5px/1.2 var(--ital);color:var(--ivory-3)}
+.shelfHead .count{margin-left:auto;font:500 11px var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--ivory-3)}
+.gifts{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.gift{position:relative;text-align:left;border:0;padding:12px;border-radius:var(--r-in);background:rgba(5,10,7,.35);border:1px solid rgba(243,237,225,.06);display:grid;gap:10px;align-content:start;will-change:transform}
+.gift:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+.gift .label{font:500 14px/1.25 var(--serif);letter-spacing:-.005em}
+.gift .meta{font-size:12px;color:var(--ivory-3);display:flex;justify-content:space-between;gap:8px}
+.pill{justify-self:start;display:inline-flex;align-items:center;gap:6px;font:600 10.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;padding:6px 9px;border-radius:var(--r-pill);border:1px solid var(--hair);color:var(--gold-hi);background:rgba(188,156,92,.08)}
+.pill.bought{background:var(--gold);color:var(--spruce);border-color:var(--gold)}
+.pill i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.addTile{display:grid;place-items:center;text-align:center;gap:6px;min-height:200px;border:1px dashed var(--hair);background:transparent;color:var(--ivory-2);border-radius:var(--r-in);padding:12px}
+.addTile b{font:italic 400 18px var(--ital);color:var(--gold-hi)}
+.addTile .plus{width:36px;height:36px;border-radius:50%;border:1px solid var(--gold);display:grid;place-items:center;font:300 22px/1 var(--sans);color:var(--gold-hi)}
+
+/* the wrapped box (shared element) */
+.box{position:relative;aspect-ratio:1/1;border-radius:calc(var(--r-in) - 4px);overflow:visible;
+  background:var(--bc,#0d4724);box-shadow:inset 0 -14px 24px rgba(0,0,0,.25),inset 0 10px 18px rgba(255,255,255,.06),0 1px 1px rgba(0,0,0,.2),0 6px 12px rgba(0,0,0,.25),0 18px 30px rgba(0,0,0,.25)}
+.box::before{content:"";position:absolute;inset:0;border-radius:inherit;background:repeating-linear-gradient(45deg,rgba(255,255,255,.025) 0 6px,transparent 6px 14px)}
+.box .rv,.box .rh{position:absolute;background:var(--rc,#bc9c5c);box-shadow:0 0 0 1px rgba(0,0,0,.08),inset 0 0 6px rgba(255,255,255,.25)}
+.box .rv{top:0;bottom:0;left:50%;width:13%;transform:translateX(-50%)}
+.box .rh{left:0;right:0;top:50%;height:13%;transform:translateY(-50%)}
+.box .bow{position:absolute;left:50%;top:50%;width:46%;height:24%;transform:translate(-50%,-50%)}
+.box .bow::before,.box .bow::after{content:"";position:absolute;top:0;width:48%;height:100%;border:5px solid var(--rc,#bc9c5c);border-radius:50% 50% 50% 50%/60% 60% 40% 40%;box-sizing:border-box}
+.box .bow::before{left:0;transform:rotate(-14deg)}.box .bow::after{right:0;transform:rotate(14deg)}
+.box .knot{position:absolute;left:50%;top:50%;width:14%;height:14%;transform:translate(-50%,-50%);border-radius:30%;background:var(--rc,#bc9c5c);box-shadow:inset 0 -2px 3px rgba(0,0,0,.25)}
+.box .tag{position:absolute;right:-6px;bottom:12%;max-width:66%;padding:6px 10px 6px 14px;background:var(--ivory);color:#3b2a10;font:italic 400 13px/1.1 var(--ital);border-radius:3px 6px 6px 3px;box-shadow:0 4px 10px rgba(0,0,0,.3);transform:rotate(-4deg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;clip-path:polygon(9px 0,100% 0,100% 100%,9px 100%,0 50%)}
+
+/* skeleton */
+.skel{background:linear-gradient(100deg,rgba(243,237,225,.05) 30%,rgba(243,237,225,.12) 50%,rgba(243,237,225,.05) 70%);background-size:300% 100%;animation:shim 1.3s linear infinite;border-radius:6px}
+@keyframes shim{from{background-position:100% 0}to{background-position:0 0}}
+.skelBox{aspect-ratio:1/1;border-radius:calc(var(--r-in) - 4px)}
+.skelLine{height:12px}.skelLine.s{width:60%}
+
+/* ---------- sheet (glass, drag to dismiss) ---------- */
+.scrim{position:fixed;inset:0;z-index:70;background:rgba(3,7,5,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .45s var(--ease-out)}
+.scrim.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:50%;bottom:0;z-index:71;width:min(560px,100%);max-height:92vh;overflow:auto;padding:12px calc(var(--pad) + 8px) calc(28px + env(safe-area-inset-bottom));
+  border-radius:var(--r-out) var(--r-out) 0 0;background:rgba(14,26,19,.86);backdrop-filter:blur(28px) saturate(1.25);-webkit-backdrop-filter:blur(28px) saturate(1.25);
+  border:1px solid var(--hair);border-bottom:0;box-shadow:0 -1px 0 rgba(255,255,255,.04),0 -20px 60px rgba(0,0,0,.45);transform:translate(-50%,105%);visibility:hidden;touch-action:none}
+.sheet.open{visibility:visible}
+.grab{width:44px;height:5px;border-radius:3px;background:rgba(243,237,225,.25);margin:4px auto 16px}
+.sheet .box{width:min(220px,52vw);margin:4px auto 20px}
+.sheet h4{margin:0;font:400 clamp(28px,5vw,36px)/1.05 var(--serif);letter-spacing:-.02em;text-align:center}
+.sheet .line{text-align:center;color:var(--ivory-2);font:italic 300 17px/1.4 var(--ital);margin:8px 0 0}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:24px 0 16px}
+.fact{padding:12px;border-radius:var(--r-in);background:rgba(243,237,225,.05);border:1px solid rgba(243,237,225,.07)}
+.fact small{display:block;font:600 10px var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--ivory-3)}
+.fact span{font:500 15px var(--serif)}
+.note{font-size:14px;color:var(--ivory-2);padding:0 4px 8px}
+.status{display:flex;justify-content:center;min-height:30px;margin:8px 0 16px}
+.actions{display:grid;gap:8px}
+.btn{position:relative;border:0;text-decoration:none;border-radius:var(--r-pill);padding:15px 20px;font:600 14px/1 var(--sans);letter-spacing:.01em;transition:transform .5s var(--spring),background .2s,opacity .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{transform:scale(.96);transition:transform .12s var(--ease-out)}
+.btn.primary{background:var(--ivory);color:var(--spruce);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 8px 24px rgba(0,0,0,.3)}
+.btn.gold{background:linear-gradient(180deg,#e7cd8d,#bc9c5c);color:#2a1d07;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 8px 24px rgba(0,0,0,.3)}
+.btn.ghost{background:rgba(243,237,225,.06);border:1px solid var(--hair);color:var(--ivory)}
+.btn[disabled]{opacity:.5;cursor:default}
+.field{display:grid;gap:8px;margin:8px 0 16px}
+.field label{font:600 10.5px var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--ivory-3)}
+.field input,.field select{width:100%;padding:14px 16px;border-radius:var(--r-in);border:1px solid var(--hair);background:rgba(5,10,7,.5);color:var(--ivory);font:500 15px var(--sans);outline:none;transition:border-color .2s,box-shadow .2s}
+.field input:focus,.field select:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(188,156,92,.15)}
+.prio{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.prio button{padding:12px 8px;border-radius:var(--r-in);border:1px solid var(--hair);background:rgba(5,10,7,.4);font:500 13px var(--sans);transition:transform .45s var(--spring),background .2s,border-color .2s}
+.prio button:active{transform:scale(.95)}
+.prio button[aria-pressed="true"]{background:rgba(188,156,92,.16);border-color:var(--gold);color:var(--gold-hi)}
+.prio i{display:block;width:22px;height:6px;border-radius:3px;margin:0 auto 6px}
+.whoList{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin:16px 0}
+.whoList button{padding:14px 12px;border-radius:var(--r-in);border:1px solid var(--hair);background:rgba(5,10,7,.4);font:500 15px var(--serif);transition:transform .45s var(--spring),background .2s,border-color .2s}
+.whoList button:hover{border-color:var(--gold);background:rgba(188,156,92,.1)}
+.whoList button:active{transform:scale(.95)}
+.sheet .kicker{text-align:center;font:500 11px var(--sans);letter-spacing:.28em;text-transform:uppercase;color:var(--gold-hi);margin:0 0 8px}
+
+/* ---------- toast ---------- */
+.toast{position:fixed;left:50%;bottom:24px;z-index:80;transform:translate(-50%,140%);padding:12px 18px;border-radius:var(--r-pill);background:var(--ivory);color:var(--spruce);font:600 13px var(--sans);box-shadow:var(--shadow-lift);transition:transform .6s var(--spring);display:flex;gap:8px;align-items:center}
+.toast.show{transform:translate(-50%,0)}
+
+/* ---------- footer ---------- */
+footer{padding:96px 16px 72px;text-align:center;border-top:1px solid rgba(188,156,92,.15)}
+.seal{width:88px;height:88px;margin:0 auto 24px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#9a2a31,#5a0d12 65%,#3a070b);box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),inset 0 3px 6px rgba(255,255,255,.18),0 10px 24px rgba(0,0,0,.4);font:italic 500 26px var(--serif);color:rgba(255,220,200,.75)}
+footer p{margin:6px 0;color:var(--ivory-2)}
+footer .big{font:400 clamp(28px,4vw,44px)/1.1 var(--serif);letter-spacing:-.02em;color:var(--ivory)}
+footer .big em{color:var(--gold-hi)}
+
+/* View Transitions: shared element morph */
+::view-transition-group(gift){animation-duration:.62s;animation-timing-function:cubic-bezier(.2,.9,.12,1)}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.35s}
+::view-transition-old(gift),::view-transition-new(gift){height:100%;object-fit:contain}
+
+@media (max-width:820px){
+  .shelf,.shelf.wide,.shelf.narrow{grid-column:1/-1}
+  .defs{grid-template-columns:1fr;gap:12px;margin-top:28px}
+  .viewer span{display:none}
+  .door .ring{top:22%}
+  .facts{grid-template-columns:1fr 1fr}
+  .facts .fact:last-child{grid-column:1/-1}
+}
+@media (prefers-reduced-motion:reduce){
+  .grain,.scrollcue i,.skel{animation:none}
+  *{transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<nav class="nav" id="nav">
+  <a class="mark" href="#top" title="Maison Noël is French for The House of Christmas">
+    <b>Maison Noël</b><small>the house of Christmas</small>
+  </a>
+  <label class="viewer"><span>Viewing as</span><select id="viewer"></select></label>
+</nav>
+
+<main id="top">
+  <!-- 1. Scrollytelling overture: explains the name, then the doors open -->
+  <section class="overture" id="overture" aria-label="Welcome">
+    <div class="stage" id="stage">
+      <div class="interior"><p class="welcome" id="welcome">Welcome in, Hansens.<b>The workshop is open.</b></p></div>
+      <div class="doors" aria-hidden="true">
+        <div class="door left" id="doorL"><div class="panel p1"></div><div class="panel p2"></div><div class="ring"></div></div>
+        <div class="door right" id="doorR"><div class="panel p1"></div><div class="panel p2"></div><div class="ring"></div></div>
+      </div>
+      <canvas id="snow" aria-hidden="true"></canvas>
+      <div class="titleLayer" id="titleLayer">
+        <p class="eyebrow"><span class="mask"><span class="in">The Hansen Family presents</span></span></p>
+        <h1 class="title" id="title"><span class="mask"><span class="in">Maison</span></span> <span class="mask"><span class="in accent">Noël</span></span></h1>
+        <div class="defs" id="defs">
+          <div class="def"><span class="mask"><span class="in"><span class="word">maison</span><span class="ipa">/meh-ZOHN/</span></span></span><span class="mask"><span class="in mean">French for <i>house</i>. In couture, a house of craft, like Maison Dior.</span></span></div>
+          <div class="def"><span class="mask"><span class="in"><span class="word">Noël</span><span class="ipa">/noh-EL/</span></span></span><span class="mask"><span class="in mean">French for <i>Christmas</i>.</span></span></div>
+        </div>
+        <p class="together" id="together"><span class="mask"><span class="in">Together: <em>the House of Christmas.</em></span></span></p>
+      </div>
+      <div class="scrollcue" id="cue"><span class="cueIn">Scroll to enter<i></i></span></div>
+    </div>
+  </section>
+
+  <!-- 2. Token Hall -->
+  <section class="block" id="hall" aria-labelledby="hallTitle">
+    <div class="head">
+      <p class="eyebrow reveal-line"><span class="mask"><span class="in">Room I · The Token Hall</span></span></p>
+      <h2 id="hallTitle" class="split">Choose your <em>piece.</em></h2>
+      <p class="sub reveal-line"><span class="mask"><span class="in">Sixteen pieces, cast in gold. Once yours is engraved, no one else can take it.</span></span></p>
+      <div class="rule"></div>
+    </div>
+    <div class="tokens" id="tokens"></div>
+  </section>
+
+  <!-- 3. Gallery -->
+  <section class="block" id="gallery" aria-labelledby="galTitle">
+    <div class="head">
+      <p class="eyebrow reveal-line"><span class="mask"><span class="in">Room II · The Gallery</span></span></p>
+      <h2 id="galTitle" class="split">Every wish, <em>wrapped.</em></h2>
+      <p class="sub reveal-line"><span class="mask"><span class="in">Tap a gift to open it. Switch “Viewing as” to see the spoiler shield at work.</span></span></p>
+      <div class="rule"></div>
+    </div>
+    <div class="rules" id="rules"><span class="dot"></span><div id="rulesText"></div></div>
+    <div class="bento" id="bento"></div>
+  </section>
+</main>
+
+<footer>
+  <div class="seal">MN</div>
+  <p class="big">Maison Noël, <em>the House of Christmas.</em></p>
+  <p>From the French <i>maison</i> (house) and <i>Noël</i> (Christmas). Made for the Hansens, Christmas 2026.</p>
+  <p style="font-size:12px;color:var(--ivory-3);margin-top:20px">Prototype. Sample wishes and claims are demo data. Nothing here is saved.</p>
+</footer>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Details"><div class="grab"></div><div id="sheetBody"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script>
+(() => {
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const haptic = (p = 10) => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
+
+/* =========================================================
+   SPRING PHYSICS (feature 1: the foundation)
+   A tiny damped-spring solver. Every motion in the app settles
+   like a real object: interruptible, velocity-preserving.
+   ========================================================= */
+class Spring {
+  constructor(x = 0, { k = 170, c = 18, m = 1 } = {}) { this.x = x; this.v = 0; this.t = x; this.k = k; this.c = c; this.m = m; }
+  step(dt) { const f = -this.k * (this.x - this.t) - this.c * this.v; this.v += (f / this.m) * dt; this.x += this.v * dt; }
+  get idle() { return Math.abs(this.v) < 0.002 && Math.abs(this.x - this.t) < 0.0005; }
+  set(t) { this.t = t; wake(); }
+  snap(t) { this.t = this.x = t; this.v = 0; }
+}
+const bodies = new Set(); let raf = 0, last = 0;
+function wake() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(tick); } }
+function tick(now) {
+  let dt = Math.min(0.05, (now - last) / 1000); last = now;
+  let active = false;
+  for (const b of bodies) {
+    const springs = b.springs;
+    const n = Math.ceil(dt / 0.004), h = dt / n;
+    for (const s of springs) { if (reduce) { s.snap(s.t); continue; } for (let i = 0; i < n; i++) s.step(h); }
+    b.render();
+    if (springs.some(s => !s.idle)) active = true; else { springs.forEach(s => s.snap(s.t)); b.render(); }
+  }
+  raf = active ? requestAnimationFrame(tick) : 0;
+}
+// Build a real spring curve for CSS (linear() easing) so even CSS transitions spring.
+(function springCSS() {
+  const s = new Spring(0, { k: 260, c: 20 }); s.t = 1; const pts = [];
+  for (let i = 0; i <= 60; i++) { pts.push(+s.x.toFixed(4)); for (let j = 0; j < 4; j++) s.step(0.0025 * 1.0); }
+  const curve = `linear(${pts.join(',')})`;
+  if (CSS.supports('transition-timing-function', curve)) document.documentElement.style.setProperty('--spring', curve);
+})();
+
+/* =========================================================
+   DATA (demo)
+   ========================================================= */
+const PEOPLE = [
+  { id: 'jen', name: 'Jen', role: 'santa' }, { id: 'curtis', name: 'Curtis', role: 'santa' },
+  { id: 'lindsay', name: 'Lindsay', role: 'kid' }, { id: 'aj', name: 'AJ', role: 'kid' },
+  { id: 'nate', name: 'Nate', role: 'kid' }, { id: 'lydia', name: 'Lydia', role: 'kid' },
+  { id: 'josh', name: 'Josh', role: 'kid' }, { id: 'katie', name: 'Katie', role: 'kid' }, { id: 'gabriel', name: 'Gabriel', role: 'kid' },
+  { id: 'frankie', name: 'Frankie', role: 'grandkid', managers: ['lindsay', 'aj'] },
+  { id: 'bo', name: 'Bo', role: 'grandkid', managers: ['lindsay', 'aj'] },
+  { id: 'honey', name: 'Honey', role: 'grandkid', managers: ['nate', 'lydia'] },
+];
+const P = Object.fromEntries(PEOPLE.map(p => [p.id, p]));
+const TOKENS = [
+  ['santa', 'Santa Claus', 'S'], ['mrsclaus', 'Mrs. Claus', 'C'], ['headelf', 'The Head Elf', 'E'], ['nutcracker', 'The Nutcracker', 'N'],
+  ['sugarplum', 'Sugar Plum Fairy', 'F'], ['scrooge', 'Ebenezer Scrooge', 'S'], ['tinytim', 'Tiny Tim', 'T'], ['gingerbread', 'Gingerbread Man', 'G'],
+  ['jackfrost', 'Jack Frost', 'J'], ['krampus', 'Krampus', 'K'], ['comet', 'Comet', 'C'], ['toysoldier', 'Toy Soldier', 'T'],
+  ['rudolph', 'Rudolph', 'R'], ['frosty', 'Frosty', 'F'], ['grinch', 'The Grinch', 'G'], ['buddy', 'Buddy the Elf', 'B'],
+].map(([id, name, mono], i) => ({ id, name, mono, num: ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI'][i], owner: null }));
+const T = Object.fromEntries(TOKENS.map(t => [t.id, t]));
+T.mrsclaus.owner = 'jen'; T.santa.owner = 'curtis'; T.sugarplum.owner = 'honey'; T.gingerbread.owner = 'frankie';
+const tokenOf = pid => TOKENS.find(t => t.owner === pid);
+
+const PRIO = { must: { label: 'Must have', rc: '#bc9c5c' }, love: { label: 'Would love', rc: '#9b2a33' }, stocking: { label: 'Stocking stuffer', rc: '#efe6d2' } };
+const BOX = ['#0d4724', '#5a0d12', '#13261c', '#efe6d2', '#0a3a1d', '#3d0a0e'];
+let gid = 0;
+const W = (owner, title, store, price, prio, note, claim) => ({ id: 'g' + (++gid), owner, title, store, price, prio, note, claim: claim || null, addedBy: owner, box: BOX[gid % BOX.length] });
+const WISHES = [
+  W('jen', 'Le Creuset Dutch Oven, 5.5 qt', 'Le Creuset', 420, 'must', 'Color: Flame. The round one, not oval.', { by: 'josh', status: 'bought' }),
+  W('jen', 'Diptyque Baies Candle', 'Nordstrom', 78, 'love', 'The big 300g size.'),
+  W('jen', 'Barefoot Dreams Throw', 'Nordstrom', 147, 'love', 'Cream or heather gray.', { by: 'katie', status: 'claimed' }),
+  W('curtis', 'MEATER Pro Thermometer', 'Amazon', 99, 'must', 'For the smoker.', { by: 'gabriel', status: 'claimed' }),
+  W('curtis', 'Filson Tin Cloth Cap', 'Filson', 75, 'stocking', 'Size L. Otter green.'),
+  W('nate', 'Garmin Forerunner 965', 'REI', 600, 'must', 'For Ironman Montana training.', { by: 'jen', status: 'bought' }),
+  W('nate', 'Wahoo TICKR Strap', 'Wahoo', 60, 'love', 'Works with Zwift.'),
+  W('nate', 'Roka Sunglasses', 'Roka', 230, 'stocking', 'Any dark lens.'),
+  W('honey', 'Jellycat Bashful Bunny', 'Jellycat', 25, 'must', 'Medium, blush pink.', { by: 'curtis', status: 'bought' }),
+  W('honey', 'Wooden Play Kitchen', 'Target', 130, 'love', 'Added by Lydia.'),
+  W('frankie', 'Crayola Art Case', 'Target', 30, 'must', 'The big one with markers.'),
+  W('bo', 'Kids Snow Sled', 'REI', 45, 'love', 'Red, if they have it.'),
+];
+WISHES.find(w => w.title.startsWith('Wooden')).addedBy = 'lydia';
+
+/* ---------- permissions: the spoiler shield ---------- */
+let viewer = 'nate';
+function canSeeStatus(v, owner) {
+  const V = P[v], O = P[owner];
+  if (!V || v === owner || V.role === 'grandkid') return false;
+  if (O.role === 'santa') return true;            // kids (and the other parent) coordinate gifts for Jen and Curtis
+  return V.role === 'santa';                       // only Jen and Curtis see status on kids' and grandkids' lists
+}
+const canClaim = (v, owner) => canSeeStatus(v, owner);
+const canEdit = (v, owner) => v === owner || (P[owner].managers || []).includes(v);
+function rulesFor(v) {
+  const p = P[v];
+  if (p.role === 'santa') { const other = v === 'jen' ? 'Curtis' : 'Jen'; return `<b>As ${p.name} (a Santa):</b> you see who is buying what on every list except your own. ${other} and the kids can coordinate on your list, but you never see it.`; }
+  const mine = PEOPLE.filter(x => (x.managers || []).includes(v)).map(x => x.name);
+  return `<b>As ${p.name}:</b> you can claim gifts on <b>Jen's and Curtis's</b> lists so no one doubles up. Every other list, including yours${mine.length ? ' and ' + mine.join(' and ') + '’s' : ''}, never shows what has been bought.${mine.length ? ` You manage ${mine.join(' and ')}’s list.` : ''}`;
+}
+
+/* =========================================================
+   LENIS smooth scroll + GSAP ScrollTrigger
+   ========================================================= */
+gsap.registerPlugin(ScrollTrigger);
+let lenis = null;
+if (!reduce && window.Lenis) {
+  lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 0.9 });
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add(t => lenis.raf(t * 1000));
+  gsap.ticker.lagSmoothing(0);
+}
+
+/* =========================================================
+   TEXT REVEALS (word-by-word from behind a mask)
+   ========================================================= */
+function splitWords(el) {
+  const walk = (node, parentEm) => {
+    const out = [];
+    node.childNodes.forEach(n => {
+      if (n.nodeType === 3) n.textContent.split(/(\s+)/).forEach(w => { if (!w) return; if (/^\s+$/.test(w)) out.push(document.createTextNode(' ')); else { const m = document.createElement('span'); m.className = 'mask'; const i = document.createElement(parentEm ? 'em' : 'span'); i.className = 'in'; i.textContent = w; m.appendChild(i); out.push(m); } });
+      else if (n.nodeType === 1) out.push(...walk(n, n.tagName === 'EM'));
+    });
+    return out;
+  };
+  const parts = walk(el, false); el.textContent = ''; parts.forEach(p => el.appendChild(p));
+}
+$$('.split').forEach(splitWords);
+function revealOnScroll() {
+  $$('.head').forEach(h => {
+    const ins = $$('.mask > .in', h);
+    if (reduce) return;
+    gsap.set(ins, { yPercent: 115 });
+    ScrollTrigger.create({ trigger: h, start: 'top 82%', once: true, onEnter: () => gsap.to(ins, { yPercent: 0, duration: 1.25, ease: 'expo.out', stagger: 0.06 }) });
+    gsap.from($('.rule', h), { scaleX: 0, transformOrigin: 'left', duration: 1.6, ease: 'expo.out', scrollTrigger: { trigger: h, start: 'top 82%', once: true } });
+  });
+}
+
+/* =========================================================
+   OVERTURE (feature 2: scrollytelling that explains the name)
+   ========================================================= */
+function overture() {
+  const titleIns = $$('#title .mask > .in'), eyebrow = $$('#titleLayer .eyebrow .in');
+  const defIns = $$('#defs .mask > .in'), togetherIns = $$('#together .in');
+  if (reduce) { gsap.set([$('#doorL'), $('#doorR')], { display: 'none' }); gsap.set('#welcome', { opacity: 1 }); $('#overture').style.height = 'auto'; $('#stage').style.height = 'auto'; $('#stage').style.padding = '120px 0'; $('#titleLayer').style.position = 'relative'; $('#cue').style.display = 'none'; return; }
+  gsap.set([...defIns, ...togetherIns], { yPercent: 115 });
+  // load-in: headline rises line by line
+  gsap.from(eyebrow, { yPercent: 115, duration: 1.2, ease: 'expo.out', delay: 0.15 });
+  gsap.from(titleIns, { yPercent: 115, duration: 1.6, ease: 'expo.out', stagger: 0.14, delay: 0.25 });
+
+  const tl = gsap.timeline({
+    defaults: { ease: 'none' },
+    scrollTrigger: { trigger: '#stage', start: 'top top', end: '+=320%', pin: true, scrub: 1.1, anticipatePin: 1 }
+  });
+  tl.fromTo('#cue', { opacity: 1 }, { opacity: 0, duration: 0.1, immediateRender: false }, 0)
+    .to(defIns, { yPercent: 0, stagger: 0.07, duration: 0.35, ease: 'power3.out' }, 0.05)
+    .to(togetherIns, { yPercent: 0, duration: 0.3, ease: 'power3.out' }, 0.5)
+    .to('#title', { scale: 0.86, duration: 0.6 }, 0.05)
+    .to('#titleLayer', { opacity: 0, scale: 0.94, y: -30, duration: 0.3, ease: 'power2.in' }, 1.05)
+    .to('#doorL', { rotateY: -104, duration: 0.9, ease: 'power2.inOut' }, 1.25)
+    .to('#doorR', { rotateY: 104, duration: 0.9, ease: 'power2.inOut' }, 1.25)
+    .to('.doors', { scale: 1.18, duration: 0.9, ease: 'power2.inOut' }, 1.25)
+    .fromTo('#welcome', { opacity: 0, y: 30, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: 'power2.out' }, 1.75)
+    .to({}, { duration: 0.25 });
+  ScrollTrigger.create({ trigger: '#hall', start: 'top 70%', onEnter: () => $('#nav').classList.add('show'), onLeaveBack: () => $('#nav').classList.remove('show') });
+}
+
+/* snow (cheap canvas, pauses offscreen) */
+function snow() {
+  const c = $('#snow'), x = c.getContext('2d'); let w, h, dpr, flakes = [], on = true;
+  const size = () => { dpr = Math.min(2, devicePixelRatio || 1); w = c.clientWidth; h = c.clientHeight; c.width = w * dpr; c.height = h * dpr; x.setTransform(dpr, 0, 0, dpr, 0, 0); };
+  size(); addEventListener('resize', size);
+  const N = reduce ? 0 : Math.round(Math.min(160, w / 9));
+  for (let i = 0; i < N; i++) flakes.push({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.8 + 0.4, s: Math.random() * 0.5 + 0.25, d: Math.random() * Math.PI * 2 });
+  new IntersectionObserver(([e]) => { on = e.isIntersecting; if (on) loop(); }).observe(c);
+  function loop() {
+    if (!on) return; x.clearRect(0, 0, w, h);
+    for (const f of flakes) { f.y += f.s; f.d += 0.01; f.x += Math.sin(f.d) * 0.3; if (f.y > h + 4) { f.y = -4; f.x = Math.random() * w; } x.globalAlpha = 0.35 + f.r / 4; x.beginPath(); x.arc(f.x, f.y, f.r, 0, 7); x.fillStyle = '#f6efe0'; x.fill(); }
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+/* =========================================================
+   TOKEN HALL (springs + claim ceremony)
+   ========================================================= */
+function renderTokens() {
+  const wrap = $('#tokens'); wrap.innerHTML = '';
+  TOKENS.forEach(t => {
+    const b = document.createElement('button'); b.className = 'token' + (t.owner ? ' claimed' : ''); b.dataset.id = t.id;
+    b.setAttribute('aria-label', t.owner ? `${t.name}, reserved for ${P[t.owner].name}` : `Claim ${t.name}`);
+    b.innerHTML = `<div class="coinWrap"><div class="coin"><span class="mono">${t.mono}</span><span class="num">${t.num}</span><span class="sheen"></span></div><div class="shadowDisc"></div></div>
+      <div class="tname">${t.name}</div><div class="tmeta">${t.owner ? `<span class="mask"><span class="in engrave">Reserved for ${P[t.owner].name}</span></span>` : 'Available'}</div>`;
+    wrap.appendChild(b); attachCoin(b, t);
+  });
+}
+function attachCoin(el, t) {
+  const coin = $('.coin', el), disc = $('.shadowDisc', el);
+  const y = new Spring(0, { k: 200, c: 16 }), rx = new Spring(0, { k: 170, c: 14 }), ry = new Spring(0, { k: 170, c: 14 }), sc = new Spring(1, { k: 260, c: 14 }), sx = new Spring(0, { k: 120, c: 16 });
+  const body = { springs: [y, rx, ry, sc, sx], render() {
+    coin.style.transform = `translate3d(0,${y.x}px,0) rotateX(${rx.x}deg) rotateY(${ry.x}deg) scale(${sc.x})`;
+    coin.style.setProperty('--sx', sx.x + 'px');
+    const lift = Math.min(1, -y.x / 22); disc.style.transform = `scale(${1 - lift * 0.35})`; disc.style.opacity = 1 - lift * 0.5;
+  } };
+  bodies.add(body); el._spring = { y, rx, ry, sc, sx };
+  const claimed = () => !!T[t.id].owner;
+  el.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
+    const r = coin.getBoundingClientRect(); const px = (e.clientX - r.left) / r.width - 0.5, py = (e.clientY - r.top) / r.height - 0.5;
+    const k = claimed() ? 0.35 : 1;
+    ry.set(px * 34 * k); rx.set(-py * 34 * k); y.set(claimed() ? -4 : -18); sx.set(120 + px * 60);
+  });
+  el.addEventListener('pointerleave', () => { rx.set(0); ry.set(0); y.set(0); sx.set(0); sc.set(1); });
+  el.addEventListener('pointerdown', () => { if (!claimed()) { sc.set(0.94); haptic(6); } });
+  el.addEventListener('pointerup', () => sc.set(1));
+  el.addEventListener('click', () => {
+    if (claimed()) { sc.v -= 1.2; wake(); toast(`${t.name} is already engraved for ${P[t.owner].name}`); return; }
+    openClaimSheet(t);
+  });
+}
+function openClaimSheet(t) {
+  const free = PEOPLE.filter(p => !tokenOf(p.id));
+  openSheet(`<p class="kicker">Piece ${t.num}</p><h4>${t.name}</h4><p class="line">Who is claiming this piece?</p>
+    <div class="whoList">${free.map(p => `<button data-p="${p.id}">${p.name}${p.role === 'grandkid' ? '<br><small style="font:italic 300 13px var(--ital);color:var(--ivory-3)">picked by a parent</small>' : ''}</button>`).join('')}</div>
+    <p class="note" style="text-align:center">Once engraved, ${t.name} is yours for good.</p>`);
+  $$('#sheetBody .whoList button').forEach(b => b.onclick = () => { closeSheet(); setTimeout(() => claimToken(t, b.dataset.p), reduce ? 0 : 380); });
+}
+const caneShape = window.confetti && confetti.shapeFromPath ? confetti.shapeFromPath({ path: 'M9 40 L9 13 C9 5 15 0 22 0 C29 0 35 5 35 13 L35 17 L28 17 L28 13 C28 9 25.5 7 22 7 C18.5 7 16 9 16 13 L16 40 Z' }) : null;
+const starPath = (pts, R, r) => { let d = ''; for (let i = 0; i < pts * 2; i++) { const a = (Math.PI / pts) * i - Math.PI / 2, rad = i % 2 ? r : R; d += (i ? 'L' : 'M') + (20 + Math.cos(a) * rad).toFixed(2) + ' ' + (20 + Math.sin(a) * rad).toFixed(2) + ' '; } return d + 'Z'; };
+const flakeShape = window.confetti && confetti.shapeFromPath ? confetti.shapeFromPath({ path: starPath(6, 14, 2.6) }) : null;   /* six-armed snowflake */
+const starShape = window.confetti && confetti.shapeFromPath ? confetti.shapeFromPath({ path: starPath(4, 14, 3.2) }) : null;    /* four-point sparkle */
+function burst(x, y, kind = 'cane') {
+  if (reduce || !window.confetti) return;
+  const origin = { x: x / innerWidth, y: y / innerHeight };
+  if (kind === 'cane' && caneShape) {
+    confetti({ particleCount: 46, spread: 78, startVelocity: 38, gravity: 0.85, ticks: 260, scalar: 2.3, shapes: [caneShape], colors: ['#bc9c5c', '#ead39a', '#9b2a33', '#f3ede1'], origin, disableForReducedMotion: true });
+  }
+  if (flakeShape) confetti({ particleCount: kind === 'cane' ? 22 : 34, spread: 100, startVelocity: kind === 'cane' ? 26 : 30, gravity: 0.5, drift: 0.2, ticks: 300, scalar: 1.6, shapes: [flakeShape, starShape].filter(Boolean), colors: ['#f6efe0', '#ead39a', '#bc9c5c'], origin, disableForReducedMotion: true });
+}
+function claimToken(t, pid) {
+  t.owner = pid; haptic([10, 40, 14]);
+  const el = $(`.token[data-id="${t.id}"]`); el.classList.add('claimed'); el.setAttribute('aria-label', `${t.name}, reserved for ${P[pid].name}`);
+  const r = $('.coin', el).getBoundingClientRect();
+  const { y, sc } = el._spring; y.set(0); sc.v += 9; sc.set(1); wake(); // spring pop
+  burst(r.left + r.width / 2, r.top + r.height / 2, 'cane');
+  const meta = $('.tmeta', el); meta.innerHTML = `<span class="mask"><span class="in engrave">Reserved for ${P[pid].name}</span></span>`;
+  if (!reduce) gsap.from($('.engrave', meta), { yPercent: 115, duration: 1, ease: 'expo.out', delay: 0.15 });
+  toast(`${t.name} engraved for ${P[pid].name}`);
+  renderGallery(false);
+}
+
+/* =========================================================
+   GALLERY (bento shelves, shared-element morph, spoiler shield)
+   ========================================================= */
+const money = n => '$' + n.toLocaleString();
+function boxHTML(w) {
+  const light = w.box === '#efe6d2'; const rc = light && w.prio === 'stocking' ? '#bc9c5c' : PRIO[w.prio].rc;
+  return `<div class="box" style="--bc:${w.box};--rc:${rc}"><div class="rv"></div><div class="rh"></div><div class="bow"></div><div class="knot"></div><div class="tag">For ${P[w.owner].name}</div></div>`;
+}
+function statusHTML(w) {
+  if (!w.claim || !canSeeStatus(viewer, w.owner)) return '';
+  const who = w.claim.by === viewer ? 'You' : P[w.claim.by].name;
+  return w.claim.status === 'bought' ? `<span class="pill bought"><i></i>Bought · ${who}</span>` : `<span class="pill"><i></i>Claimed · ${who}</span>`;
+}
+const ORDER = ['jen', 'curtis', 'nate', 'honey', 'lindsay', 'frankie', 'bo', 'aj', 'lydia', 'josh', 'katie', 'gabriel'];
+const SIZE = { jen: 'wide', curtis: 'narrow', nate: '', honey: '', frankie: 'narrow', bo: 'wide' };
+function renderGallery(animate = true) {
+  $('#rulesText').innerHTML = rulesFor(viewer);
+  const bento = $('#bento'); bento.innerHTML = '';
+  ORDER.filter(id => WISHES.some(w => w.owner === id) || canEdit(viewer, id)).slice(0, 8).forEach(id => {
+    const p = P[id], tok = tokenOf(id), list = WISHES.filter(w => w.owner === id);
+    const shelf = document.createElement('article'); shelf.className = 'shelf ' + (SIZE[id] ?? '');
+    const managedBy = p.managers ? `List kept by ${p.managers.map(m => P[m].name).join(' & ')}` : (tok ? tok.name : 'No piece yet');
+    shelf.innerHTML = `<div class="shelfHead"><div class="mini"><span>${tok ? tok.mono : '?'}</span></div><div><h3>${p.name}${id === viewer ? ' <span style="font:italic 300 15px var(--ital);color:var(--gold-hi)">(you)</span>' : ''}</h3><p>${managedBy}</p></div><span class="count">${list.length} ${list.length === 1 ? 'wish' : 'wishes'}</span></div><div class="gifts"></div>`;
+    const g = $('.gifts', shelf);
+    list.forEach(w => g.appendChild(giftCard(w)));
+    if (canEdit(viewer, id)) { const a = document.createElement('button'); a.className = 'addTile'; a.innerHTML = `<span class="plus">+</span><b>Add a wish</b><span style="font-size:12px">${id === viewer ? 'Paste any store link' : 'for ' + p.name}</span>`; a.onclick = () => openAddSheet(id, a); g.appendChild(a); }
+    bento.appendChild(shelf);
+  });
+  if (animate && !reduce) {
+    ScrollTrigger.batch($$('.shelf', bento), { start: 'top 88%', once: true, onEnter: els => gsap.fromTo(els, { opacity: 0, y: 56 }, { opacity: 1, y: 0, duration: 1.2, ease: 'expo.out', stagger: 0.09 }) });
+    $$('.shelf', bento).forEach(s => gsap.set(s, { opacity: 0 }));
+    ScrollTrigger.refresh();
+  }
+}
+function giftCard(w) {
+  const b = document.createElement('button'); b.className = 'gift'; b.dataset.id = w.id;
+  b.innerHTML = `${boxHTML(w)}<div class="label">${w.title}</div><div class="meta"><span>${w.store}</span><span>${money(w.price)}</span></div>${statusHTML(w)}`;
+  const y = new Spring(0, { k: 220, c: 18 }), s = new Spring(1, { k: 300, c: 18 }), r = new Spring(0, { k: 160, c: 12 });
+  const body = { springs: [y, s, r], render() { b.style.transform = `translate3d(0,${y.x}px,0) scale(${s.x}) rotate(${r.x}deg)`; } };
+  bodies.add(body);
+  b.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') { y.set(-6); r.v += (Math.random() - 0.5) * 18; r.set(0); } });
+  b.addEventListener('pointerleave', () => { y.set(0); s.set(1); });
+  b.addEventListener('pointerdown', () => { s.set(0.96); haptic(5); });
+  b.addEventListener('pointerup', () => s.set(1));
+  b.addEventListener('click', () => openWish(w, b));
+  return b;
+}
+
+/* ---------- sheet with drag-to-dismiss spring ---------- */
+const sheet = $('#sheet'), scrim = $('#scrim'); let sheetOpen = false, fromCard = null;
+const sy = new Spring(1, { k: 210, c: 24 });
+bodies.add({ springs: [sy], render() { sheet.style.transform = `translate(-50%, ${sy.x * 105}%)`; if (!sheetOpen && sy.idle && sy.t === 1) sheet.classList.remove('open'); } });
+function openSheet(html, { instant = false } = {}) {
+  $('#sheetBody').innerHTML = html; sheet.classList.add('open'); scrim.classList.add('open'); sheetOpen = true; lenis && lenis.stop();
+  if (instant || reduce) { sy.snap(0); sheet.style.transform = 'translate(-50%,0)'; } else { sy.set(0); }
+  sheet.scrollTop = 0;
+}
+function closeSheet({ velocity = 0 } = {}) {
+  if (!sheetOpen) return; sheetOpen = false; scrim.classList.remove('open'); lenis && lenis.start();
+  sy.v = velocity; sy.set(1); if (reduce) { sy.snap(1); sheet.classList.remove('open'); }
+  fromCard = null;
+}
+scrim.addEventListener('click', () => closeSheet());
+addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+(function drag() {
+  let startY = 0, startT = 0, lastY = 0, lastT = 0, dragging = false, h = 1;
+  sheet.addEventListener('pointerdown', e => {
+    if (e.target.closest('button, input, select, a') || sheet.scrollTop > 0) return;
+    dragging = true; startY = lastY = e.clientY; startT = lastT = performance.now(); h = sheet.offsetHeight; sheet.setPointerCapture(e.pointerId);
+  });
+  sheet.addEventListener('pointermove', e => {
+    if (!dragging) return; let d = (e.clientY - startY) / h / 1.05;
+    if (d < 0) d = d * 0.25; // rubber band upward
+    sy.snap(d); sheet.style.transform = `translate(-50%, ${d * 105}%)`;
+    lastY = e.clientY; lastT = performance.now();
+  });
+  const end = e => {
+    if (!dragging) return; dragging = false;
+    const dt = Math.max(1, performance.now() - lastT), vel = (e.clientY - lastY) / dt; // px per ms
+    const prog = sy.x; const vNorm = (vel * 1000) / h / 1.05;
+    if (prog > 0.28 || vel > 0.7) { haptic(8); closeSheet({ velocity: vNorm }); } else { sy.v = vNorm; sy.set(0); }
+  };
+  sheet.addEventListener('pointerup', end); sheet.addEventListener('pointercancel', end);
+})();
+
+/* ---------- wish detail via View Transitions (feature 3: shared element) ---------- */
+function wishHTML(w) {
+  const owner = P[w.owner];
+  const added = w.addedBy !== w.owner ? ` Added by ${P[w.addedBy].name}.` : '';
+  let actions = `<a class="btn primary" href="#" data-act="store">Open at ${w.store} <span aria-hidden="true">↗</span></a>`;
+  if (canClaim(viewer, w.owner)) {
+    if (!w.claim) actions += `<button class="btn gold" data-act="claim">I'll get this</button>`;
+    else if (w.claim.by === viewer && w.claim.status === 'claimed') actions += `<button class="btn gold" data-act="bought">Mark as bought</button><button class="btn ghost" data-act="unclaim">Let someone else get it</button>`;
+    else if (w.claim.by !== viewer) actions += `<button class="btn ghost" disabled>${P[w.claim.by].name} has this one</button>`;
+  }
+  if (canEdit(viewer, w.owner)) actions += `<button class="btn ghost" data-act="edit">Edit wish</button>`;
+  return `<p class="kicker">${owner.name}'s wish</p>${boxHTML(w)}<h4>${w.title}</h4><p class="line">${w.note}${added}</p>
+    <div class="facts"><div class="fact"><small>Store</small><span>${w.store}</span></div><div class="fact"><small>Price</small><span>${money(w.price)}</span></div><div class="fact"><small>Priority</small><span>${PRIO[w.prio].label}</span></div></div>
+    <div class="status" id="sheetStatus">${statusHTML(w)}</div><div class="actions">${actions}</div>`;
+}
+function openWish(w, card) {
+  const cardBox = $('.box', card);
+  const go = () => { cardBox.style.viewTransitionName = ''; openSheet(wishHTML(w), { instant: true }); $('#sheetBody .box').style.viewTransitionName = 'gift'; bindWish(w, card); };
+  fromCard = card;
+  if (document.startViewTransition && !reduce) {
+    cardBox.style.viewTransitionName = 'gift';
+    const vt = document.startViewTransition(go);
+    vt.finished.finally(() => { const b = $('#sheetBody .box'); if (b) b.style.viewTransitionName = ''; });
+  } else go();
+}
+function bindWish(w, card) {
+  $$('#sheetBody [data-act]').forEach(b => b.addEventListener('click', e => {
+    e.preventDefault(); const act = b.dataset.act; haptic(10);
+    if (act === 'store') return toast(`Demo: this would open ${w.store} in a new tab`);
+    if (act === 'edit') return toast('Demo: edit title, link, price and notes');
+    // optimistic UI: update instantly, "sync" in background
+    if (act === 'claim') w.claim = { by: viewer, status: 'claimed' };
+    if (act === 'bought') w.claim.status = 'bought';
+    if (act === 'unclaim') w.claim = null;
+    $('#sheetBody').innerHTML = wishHTML(w); bindWish(w, card);
+    const pill = $('#sheetStatus .pill'); if (pill && !reduce) gsap.from(pill, { scale: 0.6, opacity: 0, duration: 0.9, ease: 'elastic.out(1, 0.55)' });
+    if (act === 'bought') { const r = pill.getBoundingClientRect(); burst(r.left + r.width / 2, r.top, 'cane'); }
+    const newCard = giftCard(w); card.replaceWith(newCard); card = newCard;
+    toast(act === 'claim' ? 'Claimed. Hidden from ' + P[w.owner].name : act === 'bought' ? 'Marked as bought' : 'Released', true);
+  }));
+}
+
+/* ---------- add a wish: skeleton + optimistic + snowflake burst ---------- */
+function openAddSheet(owner, tile) {
+  let prio = 'love';
+  openSheet(`<p class="kicker">The Wish Desk</p><h4>${owner === viewer ? 'Add a wish' : 'Add a wish for ' + P[owner].name}</h4><p class="line">Paste a link. The elves will wrap it.</p>
+    <div class="field" style="margin-top:20px"><label for="url">Store link</label><input id="url" placeholder="https://www.rei.com/product/..." value="https://www.lego.com/en-us/product/winter-village-cabin"></div>
+    <div class="field"><label>Priority</label><div class="prio">${Object.entries(PRIO).map(([k, v]) => `<button data-k="${k}" aria-pressed="${k === prio}"><i style="background:${v.rc}"></i>${v.label}</button>`).join('')}</div></div>
+    <div class="actions"><button class="btn gold" id="wrapIt">Wrap it</button></div>`);
+  $$('#sheetBody .prio button').forEach(b => b.onclick = () => { prio = b.dataset.k; $$('#sheetBody .prio button').forEach(x => x.setAttribute('aria-pressed', x === b)); haptic(5); });
+  $('#wrapIt').onclick = () => {
+    let host = 'Store'; try { host = new URL($('#url').value).hostname.replace(/^www\./, '').split('.')[0]; } catch (e) {}
+    host = host.charAt(0).toUpperCase() + host.slice(1);
+    closeSheet();
+    // optimistic: a skeleton appears instantly where the wish will land
+    const sk = document.createElement('div'); sk.className = 'gift'; sk.innerHTML = `<div class="skel skelBox"></div><div class="skel skelLine"></div><div class="skel skelLine s"></div>`;
+    tile.before(sk); if (!reduce) gsap.from(sk, { scale: 0.8, opacity: 0, duration: 0.8, ease: 'elastic.out(1,0.6)' });
+    toast('The elves are wrapping it…');
+    setTimeout(() => {
+      const w = W(owner, host === 'Lego' ? 'LEGO Winter Village Cabin' : 'New wish from ' + host, host === 'Lego' ? 'LEGO' : host, 100, prio, 'Pulled automatically from the link.');
+      w.addedBy = viewer; WISHES.push(w);
+      const card = giftCard(w); sk.replaceWith(card);
+      if (!reduce) gsap.from(card, { scale: 0.85, opacity: 0, duration: 1, ease: 'elastic.out(1,0.55)' });
+      const r = $('.box', card).getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, 'flake'); haptic([8, 30, 8]);
+      const count = card.closest('.shelf').querySelector('.count'); const n = WISHES.filter(x => x.owner === owner).length; count.textContent = `${n} ${n === 1 ? 'wish' : 'wishes'}`;
+      toast('Wrapped and on the shelf', true);
+    }, reduce ? 300 : 1500);
+  };
+}
+
+/* ---------- toast ---------- */
+let toastT = 0;
+function toast(msg, ok) { const t = $('#toast'); t.innerHTML = (ok ? '<span style="color:#0a3a1d">✓</span>' : '') + msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2400); }
+
+/* ---------- viewer switch ---------- */
+const sel = $('#viewer');
+sel.innerHTML = PEOPLE.filter(p => p.role !== 'grandkid').map(p => `<option value="${p.id}" ${p.id === viewer ? 'selected' : ''}>${p.name}${p.role === 'santa' ? ' (Santa)' : ''}</option>`).join('');
+sel.addEventListener('change', () => { viewer = sel.value; haptic(6); renderGallery(false); if (!reduce) gsap.fromTo('.shelf', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.9, ease: 'expo.out', stagger: 0.06 }); toast(`Now viewing as ${P[viewer].name}`); });
+
+/* ---------- boot ---------- */
+$$('a[href="#top"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); lenis ? lenis.scrollTo(0, { duration: 2.2 }) : scrollTo({ top: 0, behavior: 'smooth' }); }));
+snow(); renderTokens(); renderGallery(true); overture(); revealOnScroll();
+if (!reduce) ScrollTrigger.batch('.token', { start: 'top 90%', once: true, onEnter: els => gsap.fromTo(els, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 1.1, ease: 'expo.out', stagger: 0.045 }) }), gsap.set('.token', { opacity: 0 });
+document.fonts && document.fonts.ready.then(() => ScrollTrigger.refresh());
+window.__MN = { P, T, WISHES, canSeeStatus };
+})();
+</script>
+</body>
+</html>
