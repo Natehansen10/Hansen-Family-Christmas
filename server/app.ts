@@ -23,31 +23,33 @@ export interface AppOptions {
   unfurl?: typeof unfurl
 }
 
+// The project URL and publishable key are public by design (the key ships to every browser and RLS
+// denies it everything), so they live here as defaults. The secret key never does: it is env-only.
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ghciuhfbjzgebnjuctnd.supabase.co'
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_7rnFHzUmGhKSo8zfd179lA_j57y9ExE'
+
 const g = globalThis as { __mnStore?: Store }
 
 function defaultStore(): Store {
   if (g.__mnStore) return g.__mnStore
-  const url = process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (url && key) return (g.__mnStore = new SupabaseStore(url, key))
+  if (key) return (g.__mnStore = new SupabaseStore(SUPABASE_URL, key))
   // An in-memory store on serverless would forget everything between requests. Refuse.
-  if (process.env.VERCEL) throw new ConfigError('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are not set.')
+  if (process.env.VERCEL) throw new ConfigError('SUPABASE_SERVICE_ROLE_KEY is not set in Vercel.')
   return (g.__mnStore = new MemoryStore())
 }
 
 function realtimeConfig() {
-  const url = process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_ANON_KEY
-  return url && key ? { url, key } : null
+  // local dev on the in-memory store has nothing to listen to
+  return process.env.SUPABASE_SERVICE_ROLE_KEY ? { url: SUPABASE_URL, key: SUPABASE_ANON_KEY } : null
 }
 
 /** Payload-free on purpose: no wish or claim data ever travels over realtime. */
 async function broadcastChanged() {
-  const url = process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) return
+  if (!key) return
   try {
-    await fetch(`${url}/realtime/v1/api/broadcast`, {
+    await fetch(`${SUPABASE_URL}/realtime/v1/api/broadcast`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', apikey: key, authorization: `Bearer ${key}` },
       body: JSON.stringify({ messages: [{ topic: 'board', event: 'changed', payload: {} }] }),

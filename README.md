@@ -22,8 +22,8 @@ npm test
 Runs the 12 x 12 permission matrix, the API leak tests and the link-preview SSRF tests.
 
 ## Go live (one time)
-1. Create a Supabase project. In the SQL editor, run `supabase/migrations/0001_init.sql`. It creates the tables, seeds the 12 people and 16 pieces, and turns on RLS with no policies, so the public key can read nothing.
-2. In Vercel, add these env vars for Production and Preview (see `.env.example`): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `SESSION_SECRET` (32+ random characters).
+1. In the Supabase SQL editor, run `supabase/migrations/0001_init.sql`. It creates the tables, seeds the 12 people and 16 pieces, and turns on RLS with no policies, so the public key can read nothing.
+2. In Vercel, add two env vars for Production and Preview (see `.env.example`): `SUPABASE_SERVICE_ROLE_KEY` (the Supabase secret key) and `SESSION_SECRET` (32+ random characters). The project URL and publishable key are already wired in.
 3. Deploy. Without step 2 the API answers 503 on purpose rather than pretending to save.
 
 Forgot a vault code: in Supabase run `update people set vault_hash = null, failed_attempts = 0, locked_until = null where id = 'nate';`. The next code entered on that person's piece becomes the new one.
