@@ -335,6 +335,11 @@ export function createApp(opts: AppOptions = {}) {
       const secure = (req.headers.get('x-forwarded-proto') ?? url.protocol.replace(':', '')) === 'https'
       if (req.method !== 'GET') assertSameOrigin(req, url)
       switch (route) {
+        case 'health': {
+          // Setup check: proves the env vars are present and the database answers. No secrets, no data.
+          const [people, tokens] = await Promise.all([getStore().people(), getStore().tokens()])
+          return json({ ok: people.length === 12 && tokens.length === 16, people: people.length, tokens: tokens.length, session: !!process.env.SESSION_SECRET || !process.env.VERCEL })
+        }
         case 'session':
           return await session(req, secure)
         case 'board':

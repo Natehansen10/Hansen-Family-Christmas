@@ -296,3 +296,9 @@ describe('POST /api/unfurl', () => {
     expect((await w.call('nate', 'POST', '/api/unfurl', { url: 'https://example.com' })).json.title).toBe('Stub')
   })
 })
+
+describe('GET /api/health', () => {
+  it('reports setup state and nothing else', async () => {
+    expect((await w.call(null, 'GET', '/api/health')).json).toEqual({ ok: true, people: 12, tokens: 16, session: true })
+  })
+})
